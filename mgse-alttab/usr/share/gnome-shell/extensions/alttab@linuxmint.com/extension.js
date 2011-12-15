@@ -86,7 +86,7 @@ AltTabPopupW.prototype = {
     __proto__ : AltTab.AltTabPopup.prototype,
 
     show : function(backward, switch_group, mask) {
-    let apps = get_running_apps ();
+        let apps = get_running_apps ();
 
         if (!apps.length)
             return false;
@@ -95,7 +95,7 @@ AltTabPopupW.prototype = {
             return false;
         this._haveModal = true;
 
-        this.actor.connect('key-press-event', Lang.bind(this, this._keyPressEvent));
+        this.actor.connect('key-press-event', Lang.bind(this, this._keyPressEventLocal));
         this.actor.connect('key-release-event', Lang.bind(this, this._keyReleaseEvent));
 
         this.actor.connect('button-press-event', Lang.bind(this, this._clickedOutside));
@@ -167,6 +167,16 @@ AltTabPopupW.prototype = {
         this.destroy();
     },
     
+    _keyPressEventLocal : function(actor, event) {
+        let keysym = event.get_key_symbol();
+
+        if (keysym == Clutter.Down) {
+            return false;
+        }
+        
+        this._keyPressEvent(actor,event);
+    },
+
     _keyReleaseEvent : function(actor, event) {
         let [x, y, mods] = global.get_pointer();
         let state = mods & Gdk.ModifierType.MOD1_MASK;
@@ -186,24 +196,64 @@ function AppIcon(app, window) {
 AppIcon.prototype = {
     __proto__ : AltTab.AppIcon.prototype,
 
-    _init: function(app, window) {
+    _init: function(app, window) {        
         this.app = app;
+
+        // Enable and disable thumbnail feature,
+        // usefull for mintDesktop in the future.
+        let thumbnailEnabled = true;
+
+        let windowMutter = null;
+        
+        // Create a window thumbnail
+        if (thumbnailEnabled) {
+            if (windowMutter = window.get_compositor_private()) {
+
+                let iconSize = 32;
+                let iconOverlap = 3;
+                
+                let texture = windowMutter.get_texture();
+                let [width, height] = texture.get_size();
+                let scale = Math.min(1.0, 156 / width, 156 / width);
+                
+                this._thumbnail = new Clutter.Clone ({
+                    source: texture,
+                    reactive: true,
+                    width: width * scale,
+                    height: height * scale
+                });
+                
+                this._thumbnailIcon = this.app.create_icon_texture(iconSize);
+                this._thumbnailIcon.set_position(
+                    width * scale - (iconSize - iconOverlap),
+                    height * scale - (iconSize - iconOverlap)
+                );
+            }
+        } else {
+            this._thumbnail = null;
+        }
 
         this.cachedWindows = [];
         this.cachedWindows.push(window);
 
-        this.actor = new St.BoxLayout({ style_class: 'alt-tab-app',
-                                         vertical: true });
-                                         
+        this.actor = new St.BoxLayout({ style_class: 'alt-tab-app', vertical: true });
+        
+        if (this._thumbnail == null) {          
+            this._iconBin = new St.Bin({ x_fill: true, y_fill: true });
+            this.actor.add(this._iconBin, { x_fill: false, y_fill: false });
+        } else {            
+            let icon = 
+
+            this.actor.add(this._thumbnail); 
+            this.actor.add(this._thumbnailIcon);                        
+        }
+        
         this.icon = null;
-        this._iconBin = new St.Bin({ x_fill: true, y_fill: true });
-
-        this.actor.add(this._iconBin, { x_fill: false, y_fill: false } );
-
+                
         let title = window.get_title();
         if (title) {
             this.label = new St.Label({ text: title });
-            let bin = new St.Bin({ x_align: St.Align.MIDDLE });
+            let bin = new St.Bin({ x_align: St.Align.MIDDLE });            
             bin.add_actor(this.label);
             this.actor.add(bin);
         }

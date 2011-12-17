@@ -237,14 +237,12 @@ AppIcon.prototype = {
         this.cachedWindows = [];
         this.cachedWindows.push(window);
 
+        this._iconBin = new St.Bin({ x_fill: true, y_fill: true });
         this.actor = new St.BoxLayout({ style_class: 'alt-tab-app', vertical: true });
         
         if (this._thumbnail == null) {          
-            this._iconBin = new St.Bin({ x_fill: true, y_fill: true });
             this.actor.add(this._iconBin, { x_fill: false, y_fill: false });
         } else {            
-            let icon = 
-
             this.actor.add(this._thumbnail); 
             this.actor.add(this._thumbnailIcon);                        
         }
@@ -324,7 +322,7 @@ WindowSwitcher.prototype = {
             this.addSeparator();
         for (let i = 0; i < otherIcons.length; i++)
             if (thumbnailEnabled) {
-                this._addThumbnail(workspaceIcons[i]);
+                this._addThumbnail(otherIcons[i]);
             } else {
                 this._addIcon(otherIcons[i]);
             }
@@ -337,15 +335,26 @@ WindowSwitcher.prototype = {
     },
 
     _addThumbnail: function(appIcon) {
-        // ....
-        /*let bbox = new St.Button({ style_class: 'item-box', reactive: true });
+        this.icons.push(appIcon);
+        this.addItemThumb(appIcon.actor, appIcon.label);
         
+        // The arrow is not used, but the native AltTab extension expects it to exist.
+        let arrow = new St.DrawingArea({ style_class: 'switcher-arrow' });        
+        this._list.add_actor(arrow);
+        this._arrows.push(arrow);
+        arrow.hide();
+    },
+
+    addItemThumb : function(item, label) {
+        let bbox = new St.Button({ style_class: 'item-box', reactive: true });
+
         bbox.set_child(item);
         bbox.label_actor = label;
-        
+
         this.iconGrid.addItem(bbox);
-        this._items.push(bbox);*/
-    }
+
+        this._items.push(bbox);
+    },
 
     _isWindowOnWorkspace: function(w, workspace) {
             if (w.get_workspace() == workspace)

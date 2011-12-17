@@ -18,6 +18,7 @@ const Shell = imports.gi.Shell;
 const St = imports.gi.St;
 const Tweener = imports.ui.tweener;
 const WindowManager = imports.ui.windowManager;
+const IconGrid = imports.ui.iconGrid;
 
 const Gettext = imports.gettext.domain('gnome-shell-extensions');
 const _ = Gettext.gettext;
@@ -29,6 +30,10 @@ const POPUP_DELAY_TIMEOUT = 150; // milliseconds
 const SETTINGS_SCHEMA = 'linuxmint.mgse.alttab';
 const SETTINGS_BEHAVIOUR_KEY = 'behaviour';
 const SETTINGS_FIRST_TIME_KEY = 'first-time';
+
+// Enable and disable thumbnail feature,
+// usefull for mintDesktop in the future.
+const thumbnailEnabled = true;
 
 const MODES = {
     native: function() {
@@ -199,10 +204,6 @@ AppIcon.prototype = {
     _init: function(app, window) {        
         this.app = app;
 
-        // Enable and disable thumbnail feature,
-        // usefull for mintDesktop in the future.
-        let thumbnailEnabled = true;
-
         let windowMutter = null;
         
         // Create a window thumbnail
@@ -305,12 +306,29 @@ WindowSwitcher.prototype = {
 
         this.icons = [];
         this._arrows = [];
+
+        if (thumbnailEnabled) {
+            this.iconGrid = new IconGrid.IconGrid({ xAlign: St.Align.MIDDLE, columnLimit: 8 });
+                                   
+            this._clipBin.child = this.iconGrid.actor;
+            this.actor.add_actor(this.iconGrid.actor);
+        }
+
         for (let i = 0; i < workspaceIcons.length; i++)
-            this._addIcon(workspaceIcons[i]);
+            if (thumbnailEnabled) {
+                this._addThumbnail(workspaceIcons[i]);
+            } else {
+                this._addIcon(workspaceIcons[i]);
+            }
         if (workspaceIcons.length > 0 && otherIcons.length > 0)
             this.addSeparator();
         for (let i = 0; i < otherIcons.length; i++)
-            this._addIcon(otherIcons[i]);
+            if (thumbnailEnabled) {
+                this._addThumbnail(workspaceIcons[i]);
+            } else {
+                this._addIcon(otherIcons[i]);
+            }
+
 
         this._curApp = -1;
         this._iconSize = 0;
@@ -318,6 +336,16 @@ WindowSwitcher.prototype = {
         this._mouseTimeOutId = 0;
     },
 
+    _addThumbnail: function(appIcon) {
+        // ....
+        /*let bbox = new St.Button({ style_class: 'item-box', reactive: true });
+        
+        bbox.set_child(item);
+        bbox.label_actor = label;
+        
+        this.iconGrid.addItem(bbox);
+        this._items.push(bbox);*/
+    }
 
     _isWindowOnWorkspace: function(w, workspace) {
             if (w.get_workspace() == workspace)

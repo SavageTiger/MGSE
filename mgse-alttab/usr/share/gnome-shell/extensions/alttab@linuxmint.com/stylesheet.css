@@ -1,1 +1,27 @@
-/* This extensions requires no special styling */
+.icon-grid-thumb {
+    spacing: 0px;
+    -shell-grid-item-size: 171px;
+}
+
+.switcher-list-thumb {
+    background: rgba(0,0,0,0.8);
+    border: 2px solid rgba(128,128,128,0.40);
+    border-radius: 24px;
+    padding: 20px;
+
+    font-size: 9pt;
+    color: white;
+}
+.switcher-list-thumb .item-box {
+    padding: 8px;
+    border-radius: 8px;
+}
+
+.switcher-list-thumb .item-box:outlined {
+    padding: 6px;
+    border: 2px solid rgba(85,85,85,1.0);
+}
+
+.switcher-list-thumb .item-box:selected {
+    background: rgba(255,255,255,0.33);
+}

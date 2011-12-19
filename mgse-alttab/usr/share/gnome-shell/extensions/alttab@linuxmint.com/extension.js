@@ -307,9 +307,13 @@ WindowSwitcher.prototype = {
 
         if (thumbnailEnabled) {
             this.iconGrid = new IconGrid.IconGrid({ xAlign: St.Align.MIDDLE, columnLimit: 8 });
-                                   
+            
             this._clipBin.child = this.iconGrid.actor;
+            
+            this.iconGrid.actor.set_style_class_name('icon-grid-thumb');
             this.actor.add_actor(this.iconGrid.actor);
+        
+            this.actor.set_style_class_name('switcher-list-thumb');
         }
 
         for (let i = 0; i < workspaceIcons.length; i++)

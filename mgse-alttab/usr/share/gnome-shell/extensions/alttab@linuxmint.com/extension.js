@@ -201,7 +201,7 @@ function AppIcon(app, window) {
 AppIcon.prototype = {
     __proto__ : AltTab.AppIcon.prototype,
 
-    _init: function(app, window) {        
+    _init: function(app, window) {
         this.app = app;
 
         let windowMutter = null;
@@ -215,7 +215,10 @@ AppIcon.prototype = {
                 
                 let texture = windowMutter.get_texture();
                 let [width, height] = texture.get_size();
-                let scale = Math.min(1.0, 156 / width, 156 / width);
+                let scale = Math.min(1.0, 155 / height, 155 / width);
+                
+                let iconLeft = width * scale - (iconSize - iconOverlap);
+                let iconTop = height * scale - (iconSize - iconOverlap);
                 
                 this._thumbnail = new Clutter.Clone ({
                     source: texture,
@@ -225,14 +228,12 @@ AppIcon.prototype = {
                 });
                 
                 this._thumbnailIcon = this.app.create_icon_texture(iconSize);
-                this._thumbnailIcon.set_position(
-                    width * scale - (iconSize - iconOverlap),
-                    height * scale - (iconSize - iconOverlap)
-                );
+                this._thumbnailIcon.set_position(iconLeft, iconTop);
             }
         } else {
             this._thumbnail = null;
         }
+
 
         this.cachedWindows = [];
         this.cachedWindows.push(window);
@@ -240,11 +241,12 @@ AppIcon.prototype = {
         this._iconBin = new St.Bin({ x_fill: true, y_fill: true });
         this.actor = new St.BoxLayout({ style_class: 'alt-tab-app', vertical: true });
         
-        if (this._thumbnail == null) {          
+        if (this._thumbnail == null) {
             this.actor.add(this._iconBin, { x_fill: false, y_fill: false });
-        } else {            
-            this.actor.add(this._thumbnail); 
-            this.actor.add(this._thumbnailIcon);                        
+        } else {
+            this.actor.add(this._thumbnail);
+            this.actor.add(this._thumbnailIcon);
+            this.actor.thumbWidth = this._thumbnailIcon.get_position()[0];
         }
         
         this.icon = null;
@@ -252,7 +254,7 @@ AppIcon.prototype = {
         let title = window.get_title();
         if (title) {
             this.label = new St.Label({ text: title });
-            let bin = new St.Bin({ x_align: St.Align.MIDDLE });            
+            let bin = new St.Bin({ x_align: St.Align.MIDDLE });
             bin.add_actor(this.label);
             this.actor.add(bin);
         }
@@ -306,14 +308,17 @@ WindowSwitcher.prototype = {
         this._arrows = [];
 
         if (thumbnailEnabled) {
-            this.iconGrid = new IconGrid.IconGrid({ xAlign: St.Align.MIDDLE, columnLimit: 8 });
+            this.iconGrid = new IconGrid.IconGrid({ xAlign: St.Align.MIDDLE });
             
             this._clipBin.child = this.iconGrid.actor;
             
             this.iconGrid.actor.set_style_class_name('icon-grid-thumb');
+
             this.actor.add_actor(this.iconGrid.actor);
-        
             this.actor.set_style_class_name('switcher-list-thumb');
+            
+            this.actor.connect('get-preferred-height', Lang.bind(this, this._getPreferredHeightThumb));
+            this.actor.connect('get-preferred-width', Lang.bind(this, this._getPreferredWidthThumb));
         }
 
         for (let i = 0; i < workspaceIcons.length; i++)
@@ -343,7 +348,7 @@ WindowSwitcher.prototype = {
         this.addItemThumb(appIcon.actor, appIcon.label);
         
         // The arrow is not used, but the native AltTab extension expects it to exist.
-        let arrow = new St.DrawingArea({ style_class: 'switcher-arrow' });        
+        let arrow = new St.DrawingArea({ style_class: 'switcher-arrow' });
         this._list.add_actor(arrow);
         this._arrows.push(arrow);
         arrow.hide();
@@ -352,12 +357,26 @@ WindowSwitcher.prototype = {
     addItemThumb : function(item, label) {
         let bbox = new St.Button({ style_class: 'item-box', reactive: true });
 
+        label.set_width(item.thumbWidth);
+        
         bbox.set_child(item);
         bbox.label_actor = label;
 
         this.iconGrid.addItem(bbox);
 
         this._items.push(bbox);
+    },
+
+    _getPreferredWidthThumb: function() {
+        let columnLimit = Math.floor(global.screen_width / this.iconGrid._item_size);
+        
+        this.iconGrid._colLimit = columnLimit;
+    },
+
+    _getPreferredHeightThumb: function() {
+        let paddingBottom = 30;
+        
+        this.actor.set_height(this.iconGrid.actor.get_height() + paddingBottom);
     },
 
     _isWindowOnWorkspace: function(w, workspace) {

@@ -4,24 +4,25 @@
 }
 
 .switcher-list-thumb {
-    background: rgba(0,0,0,0.8);
-    border: 2px solid rgba(128,128,128,0.40);
-    border-radius: 24px;
-    padding: 20px;
-
+    background: rgba(190,190,190,0.50);
+    
+    border: 2px solid rgba(64,64,64,0.50);
+    border-radius: 5px;
+    
+    padding-top: 8px;
+    padding-left: 8px;
+    padding-right: 8px;
+    
     font-size: 9pt;
-    color: white;
+    color: black;
+    font-weight: bold;
 }
+
 .switcher-list-thumb .item-box {
     padding: 8px;
     border-radius: 8px;
 }
 
-.switcher-list-thumb .item-box:outlined {
-    padding: 6px;
-    border: 2px solid rgba(85,85,85,1.0);
-}
-
 .switcher-list-thumb .item-box:selected {
-    background: rgba(255,255,255,0.33);
+    background: rgba(64,64,64,0.80);
 }

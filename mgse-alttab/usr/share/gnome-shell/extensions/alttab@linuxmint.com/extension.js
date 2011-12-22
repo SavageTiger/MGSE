@@ -288,9 +288,10 @@ WindowSwitcher.prototype = {
                 let appIcon = new AppIcon(apps[i], windows[j]);
                 if (this._isWindowOnWorkspace(windows[j], activeWorkspace)) {
                   workspaceIcons.push(appIcon);
-                }
-                else {
-                  otherIcons.push(appIcon);
+                } else {
+                    if (thumbnailEnabled == false) {
+                        otherIcons.push(appIcon);
+                    }
                 }
             }
         }
@@ -310,6 +311,8 @@ WindowSwitcher.prototype = {
         if (thumbnailEnabled) {
             this.iconGrid = new IconGrid.IconGrid({ xAlign: St.Align.MIDDLE });
             
+            this._scrollableRight = false;
+            this._heightIsSet = false;
             this._clipBin.child = this.iconGrid.actor;
             
             this.iconGrid.actor.set_style_class_name('icon-grid-thumb');
@@ -327,14 +330,13 @@ WindowSwitcher.prototype = {
             } else {
                 this._addIcon(workspaceIcons[i]);
             }
-        if (workspaceIcons.length > 0 && otherIcons.length > 0)
-            this.addSeparator();
-        for (let i = 0; i < otherIcons.length; i++)
-            if (thumbnailEnabled) {
-                this._addThumbnail(otherIcons[i]);
-            } else {
-                this._addIcon(otherIcons[i]);
-            }
+
+        if (thumbnailEnabled) {
+            if (workspaceIcons.length > 0 && otherIcons.length > 0)
+                this.addSeparator();
+            for (let i = 0; i < otherIcons.length; i++)
+                    this._addIcon(otherIcons[i]);
+        }
 
 
         this._curApp = -1;
@@ -356,10 +358,9 @@ WindowSwitcher.prototype = {
 
     addItemThumb : function(item, label) {
         let bbox = new St.Button({ style_class: 'item-box', reactive: true });
-
-        label.set_width(item.thumbWidth);
         
         bbox.set_child(item);
+        bbox.item_actor = item;
         bbox.label_actor = label;
 
         this.iconGrid.addItem(bbox);
@@ -370,13 +371,40 @@ WindowSwitcher.prototype = {
     _getPreferredWidthThumb: function() {
         let columnLimit = Math.floor(global.screen_width / this.iconGrid._item_size);
         
+        // Adjust the label-width of the St.Button to prevent stretching of the Thumbnail.
+        // Only if the label is longer than the thumbnail, otherwise it will mess up text-alignment.
+        this.iconGrid._getVisibleChildren().forEach(Lang.bind(this, function (child) {
+            if (child.item_actor.thumbWidth < child.label_actor.get_width()) {
+                child.label_actor.set_width(child.item_actor.thumbWidth);
+            }
+        }));
+        
         this.iconGrid._colLimit = columnLimit;
     },
 
     _getPreferredHeightThumb: function() {
-        let paddingBottom = 30;
+        let maxThumbHeight = 0;
+        let backgoundPadding = 40;
         
-        this.actor.set_height(this.iconGrid.actor.get_height() + paddingBottom);
+        let columnLimit = Math.floor(global.screen_width / this.iconGrid._item_size);
+        let nRows = Math.ceil(this.iconGrid._getVisibleChildren().length / columnLimit);
+        
+        // Prevent height twitching.
+        if (this._heightIsSet) {
+            return;
+        }
+        this._heightIsSet = true;
+
+        global.log(nRows);
+
+        // Get the maximum thumbnail height so we can adjust the background actor accordingly
+        this.iconGrid._getVisibleChildren().forEach(Lang.bind(this, function (child) {
+            if (child.item_actor.get_height() > maxThumbHeight) {
+                maxThumbHeight = child.item_actor.get_height();
+            }
+        }));
+        
+        this.actor.set_height((maxThumbHeight + backgoundPadding) * nRows);
     },
 
     _isWindowOnWorkspace: function(w, workspace) {
